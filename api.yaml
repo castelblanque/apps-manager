@@ -1,0 +1,136 @@
+openapi: 3.0.0
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/rafa2/HelmChartsManager/1.0.0
+info:
+  description: Helps to manage Helm charts in a Kubernetes cluster
+  version: "1.0.0"
+  title: Helm Charts manager API
+tags:
+  - name: HelmCharts
+    description: Helm charts
+paths:
+  /charts:
+    get:
+      tags:
+        - HelmCharts
+      summary: List available charts
+      operationId: listAvailableCharts
+      description: Full list of available charts
+      responses:
+        '200':
+          description: Available charts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChartInfo'
+        '400':
+          description: bad input parameter
+    post:
+      tags:
+        - HelmCharts
+      summary: Install a new chart
+      operationId: installNewChart
+      description: Install a new chart
+      responses:
+        '202':
+          description: request for installation information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartInstallationRequestData'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: an existing chart already exists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChartRequest'
+        description: Chart data to be installed
+  /charts/installed:
+    get:
+      tags:
+        - HelmCharts
+      summary: List installed charts
+      operationId: listInstalledCharts
+      description: Full list of installed charts in cluster
+      responses:
+        '200':
+          description: Installed charts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChartInfo'
+        '400':
+          description: bad input parameter
+  /charts/installed/{chartId}:
+    get:
+      tags:
+        - HelmCharts
+      summary: Get chart id installation info
+      operationId: getInstalledChart
+      description: Installation data about the chart
+      parameters:
+        - in: path
+          name: chartId
+          schema:
+            type: string
+          required: true
+          description: Chart id
+      responses:
+        '200':
+          description: Installed chart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartInstallationInfo'
+        '400':
+          description: bad input parameter
+components:
+  schemas:
+    ChartInstallationInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: Chart id
+        name:
+          type: string
+          example: Chart name
+        status:
+          type: string
+          example: '20%'
+    ChartInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: Chart id
+        name:
+          type: string
+          example: Chart name
+    ChartInstallationRequestData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '43d250cb-76db-4cde-945b-33ee36b99088'
+    ChartRequest:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          example: Chart id
+        name:
+          type: string
+          example: Installation name
