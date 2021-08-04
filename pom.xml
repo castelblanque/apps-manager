@@ -7,7 +7,7 @@
 		<version>2.5.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.interview.kubeapps</groupId>
+	<groupId>com.castelblanque</groupId>
 	<artifactId>apps-manager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Apps Manager</name>
@@ -63,7 +63,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>com.interview.kubeapps.Application</mainClass>
+							<mainClass>com.castelblanque.Application</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
@@ -84,8 +84,8 @@
 						<configuration>
 							<inputSpec>${project.basedir}/api.yaml</inputSpec>
 							<generatorName>spring</generatorName>
-							<apiPackage>com.interview.kubeapps.generated</apiPackage>
-							<modelPackage>com.interview.kubeapps.generated.model</modelPackage>
+							<apiPackage>com.castelblanque.generated</apiPackage>
+							<modelPackage>com.castelblanque.generated.model</modelPackage>
 							<configOptions>
 								<interfaceOnly>true</interfaceOnly>
 							</configOptions>

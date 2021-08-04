@@ -1,10 +1,10 @@
-package com.interview.kubeapps.controllers;
+package com.castelblanque.controllers;
 
-import com.interview.kubeapps.generated.ChartsApi;
-import com.interview.kubeapps.generated.model.ChartInfo;
-import com.interview.kubeapps.generated.model.ChartInstallationRequestData;
-import com.interview.kubeapps.generated.model.ChartRequest;
-import com.interview.kubeapps.services.ChartsService;
+import com.castelblanque.generated.ChartsApi;
+import com.castelblanque.generated.model.ChartInfo;
+import com.castelblanque.generated.model.ChartInstallationRequestData;
+import com.castelblanque.generated.model.ChartRequest;
+import com.castelblanque.services.ChartsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

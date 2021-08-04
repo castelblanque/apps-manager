@@ -1,4 +1,4 @@
-package com.interview.kubeapps;
+package com.castelblanque;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

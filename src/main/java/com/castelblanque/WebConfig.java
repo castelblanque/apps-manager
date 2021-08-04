@@ -1,4 +1,4 @@
-package com.interview.kubeapps;
+package com.castelblanque;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

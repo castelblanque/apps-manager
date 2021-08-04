@@ -1,6 +1,6 @@
-package com.interview.kubeapps.services;
+package com.castelblanque.services;
 
-import com.interview.kubeapps.generated.model.ChartInstallationRequestData;
+import com.castelblanque.generated.model.ChartInstallationRequestData;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
