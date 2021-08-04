@@ -88,6 +88,8 @@ public class ChartsController implements ChartsApi {
             consumes = {"application/json"},
             method = RequestMethod.POST)
     public ResponseEntity<StreamingResponseBody> installChart(@RequestBody ChartRequest chartRequest) throws InterruptedException, IOException {
+        
+        // @TODO Many things...but also to check that the requested chart is among the valid ones in the system
 
         // Add repo first
         final Runtime r2 = Runtime.getRuntime();
