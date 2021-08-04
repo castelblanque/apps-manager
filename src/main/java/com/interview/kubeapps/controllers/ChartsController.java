@@ -8,15 +8,14 @@ import com.interview.kubeapps.services.ChartsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,33 +48,102 @@ public class ChartsController implements ChartsApi {
         return new ResponseEntity<>(outcome, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/charts/uninstall/{releaseName}",
+            produces = {"application/json"},
+            method = RequestMethod.GET)
+    public ResponseEntity<StreamingResponseBody> uninstallRelease(@PathVariable String releaseName) throws InterruptedException, IOException {
+
+        final Runtime r = Runtime.getRuntime();
+        final Process p = r.exec("helm uninstall " + releaseName);
+        p.waitFor();
+
+        final BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        final BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+        final StreamingResponseBody responseBody = outputStream -> {
+            // Read the output from the command
+            String s = null;
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+                outputStream.write((s + "\n").getBytes(StandardCharsets.UTF_8));
+            }
+
+            System.out.println("Here is the standard error of the command (if any):");
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+                outputStream.write((s + "\n").getBytes(StandardCharsets.UTF_8));
+            }
+
+        };
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(responseBody);
+
+    }
+
+
     @RequestMapping(value = "/charts/new",
-            produces = { "application/json" },
-            consumes = { "application/json" },
+            produces = {"application/json"},
+            consumes = {"application/json"},
             method = RequestMethod.POST)
     public ResponseEntity<StreamingResponseBody> installChart(@RequestBody ChartRequest chartRequest) throws InterruptedException, IOException {
 
-        Runtime r2 = Runtime.getRuntime();
-        Process p2 = r2.exec("helm repo add bitnami https://charts.bitnami.com/bitnami");
+        // Add repo first
+        final Runtime r2 = Runtime.getRuntime();
+        final Process p2 = r2.exec("helm repo add bitnami https://charts.bitnami.com/bitnami");
         p2.waitFor();
 
 
-        StreamingResponseBody responseBody = outputStream -> {
+        final StreamingResponseBody responseBody = outputStream -> {
+
+            final Runtime r = Runtime.getRuntime();
+            final Process p = r.exec("helm install " + chartRequest.getName().toLowerCase() + " " + chartRequest.getId());
 
             try {
-                Runtime r = Runtime.getRuntime();
-                Process p = r.exec("helm install " + chartRequest.getName() + " " + chartRequest.getId());
+
+                final BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+                try (InputStream is = p.getInputStream()) {
+
+                    //   is.transferTo(outputStream);
+
+                    byte[] buf = new byte[8192];
+                    int length;
+                    while ((length = is.read(buf)) > 0) {
+                        outputStream.write(buf, 0, length);
+                    }
+                }
+
                 p.waitFor();
 
-                int numberOfBytesToWrite;
-                byte[] data = new byte[1024];
-                while ((numberOfBytesToWrite = p.getInputStream().read(data, 0, data.length)) != -1) {
-                    System.out.println("Writing some bytes..");
-                    outputStream.write(data, 0, numberOfBytesToWrite);
+                String s = null;
+                System.out.println("Standard error of the command (if any):");
+                while ((s = stdError.readLine()) != null) {
+                    System.out.println(s);
+                    outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
                 }
+
+                /*final BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                final BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+                // Read the output from the command
+                String s = null;
+                while ((s = stdInput.readLine()) != null) {
+                    System.out.println(s);
+                    outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
+                }
+
+                System.out.println("Here is the standard error of the command (if any):\n");
+                while ((s = stdError.readLine()) != null) {
+                    System.out.println(s);
+                    outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
+                }*/
+
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                p.destroy();
             }
 
         };
