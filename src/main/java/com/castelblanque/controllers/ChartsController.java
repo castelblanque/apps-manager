@@ -2,13 +2,16 @@ package com.castelblanque.controllers;
 
 import com.castelblanque.generated.ChartsApi;
 import com.castelblanque.generated.model.ChartInfo;
-import com.castelblanque.generated.model.ChartInstallationRequestData;
 import com.castelblanque.generated.model.ChartRequest;
 import com.castelblanque.services.ChartsService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.BufferedReader;
@@ -16,10 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
-
+@Log4j2
 @RestController
 public class ChartsController implements ChartsApi {
 
@@ -31,26 +33,11 @@ public class ChartsController implements ChartsApi {
 
     @Override
     public ResponseEntity<List<ChartInfo>> listAvailableCharts() {
-        final ChartInfo wordpressChart = new ChartInfo();
-        wordpressChart.setId("bitnami/wordpress");
-        wordpressChart.setName("Wordpress");
-
-        final ChartInfo drupalChart = new ChartInfo();
-        drupalChart.setId("bitnami/drupal");
-        drupalChart.setName("Drupal");
-
-        return new ResponseEntity<>(Arrays.asList(wordpressChart, drupalChart), HttpStatus.OK);
+        return new ResponseEntity<>(chartService.getAvailableCharts(), HttpStatus.OK);
     }
 
-    @Override
-    public ResponseEntity<ChartInstallationRequestData> installNewChart(ChartRequest chartRequest) {
-        final ChartInstallationRequestData outcome = chartService.install(chartRequest.getId(), chartRequest.getName());
-        return new ResponseEntity<>(outcome, HttpStatus.OK);
-    }
 
-    @RequestMapping(value = "/charts/uninstall/{releaseName}",
-            produces = {"application/json"},
-            method = RequestMethod.GET)
+    @GetMapping(value = "/charts/uninstall/{releaseName}", produces = {"application/json"})
     public ResponseEntity<StreamingResponseBody> uninstallRelease(@PathVariable String releaseName) throws InterruptedException, IOException {
 
         final Runtime r = Runtime.getRuntime();
@@ -64,13 +51,12 @@ public class ChartsController implements ChartsApi {
             // Read the output from the command
             String s = null;
             while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
                 outputStream.write((s + "\n").getBytes(StandardCharsets.UTF_8));
             }
 
-            System.out.println("Here is the standard error of the command (if any):");
+            log.debug("Here is the standard error of the command (if any):");
             while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
+                log.debug(s);
                 outputStream.write((s + "\n").getBytes(StandardCharsets.UTF_8));
             }
 
@@ -83,19 +69,12 @@ public class ChartsController implements ChartsApi {
     }
 
 
-    @RequestMapping(value = "/charts/new",
-            produces = {"application/json"},
-            consumes = {"application/json"},
-            method = RequestMethod.POST)
-    public ResponseEntity<StreamingResponseBody> installChart(@RequestBody ChartRequest chartRequest) throws InterruptedException, IOException {
-        
-        // @TODO Many things...but also to check that the requested chart is among the valid ones in the system
+    @Override
+    public ResponseEntity<StreamingResponseBody> installNewChart(@RequestBody ChartRequest chartRequest) {
 
-        // Add repo first
-        final Runtime r2 = Runtime.getRuntime();
-        final Process p2 = r2.exec("helm repo add bitnami https://charts.bitnami.com/bitnami");
-        p2.waitFor();
-
+        if (!chartService.isChartAvailable(chartRequest.getId())) {
+            return ResponseEntity.notFound().build();
+        }
 
         final StreamingResponseBody responseBody = outputStream -> {
 
@@ -107,9 +86,6 @@ public class ChartsController implements ChartsApi {
                 final BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
                 try (InputStream is = p.getInputStream()) {
-
-                    //   is.transferTo(outputStream);
-
                     byte[] buf = new byte[8192];
                     int length;
                     while ((length = is.read(buf)) > 0) {
@@ -119,32 +95,15 @@ public class ChartsController implements ChartsApi {
 
                 p.waitFor();
 
-                String s = null;
-                System.out.println("Standard error of the command (if any):");
+                String s;
+                log.debug("Standard error of the command (if any):");
                 while ((s = stdError.readLine()) != null) {
-                    System.out.println(s);
+                    log.debug(s);
                     outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
                 }
-
-                /*final BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                final BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-                // Read the output from the command
-                String s = null;
-                while ((s = stdInput.readLine()) != null) {
-                    System.out.println(s);
-                    outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
-                }
-
-                System.out.println("Here is the standard error of the command (if any):\n");
-                while ((s = stdError.readLine()) != null) {
-                    System.out.println(s);
-                    outputStream.write((s + "<br/>").getBytes(StandardCharsets.UTF_8));
-                }*/
-
 
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error(e);
                 p.destroy();
             }
 

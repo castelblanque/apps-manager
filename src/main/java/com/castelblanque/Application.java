@@ -2,14 +2,17 @@ package com.castelblanque;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-@RestController
 public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        run(args);
+    }
+
+    public static ConfigurableApplicationContext run(String[] args) {
+        return SpringApplication.run(Application.class, args);
     }
 
 }

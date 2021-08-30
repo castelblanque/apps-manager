@@ -1,20 +1,40 @@
 package com.castelblanque.services;
 
-import com.castelblanque.generated.model.ChartInstallationRequestData;
+import com.castelblanque.generated.model.ChartInfo;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.UUID;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class ChartsService {
 
-    public ChartInstallationRequestData install(String id, String name) {
-        final ChartInstallationRequestData outcome = new ChartInstallationRequestData();
-        outcome.setId(UUID.randomUUID());
-        return outcome;
+    @PostConstruct
+    public void addHelmRepo() throws IOException, InterruptedException {
+        final Runtime r2 = Runtime.getRuntime();
+        final Process p2 = r2.exec("helm repo add bitnami https://charts.bitnami.com/bitnami");
+        p2.waitFor();
+    }
+
+
+    public List<ChartInfo> getAvailableCharts() {
+        final ChartInfo wordpressChart = new ChartInfo();
+        wordpressChart.setId("bitnami/wordpress");
+        wordpressChart.setName("Wordpress");
+
+        final ChartInfo drupalChart = new ChartInfo();
+        drupalChart.setId("bitnami/drupal");
+        drupalChart.setName("Drupal");
+
+        return Arrays.asList(wordpressChart, drupalChart);
+    }
+
+    public boolean isChartAvailable(String chartId) {
+        return getAvailableCharts().stream().anyMatch(c -> c.getId().equalsIgnoreCase(chartId));
     }
 
     private void runCommand(String command) throws IOException, InterruptedException {
